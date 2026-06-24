@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ExplodingWorms.io</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #111; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// ===== SETTINGS =====
+const MAP_RADIUS = 10000;
+const MAX_SEGMENTS = 300;
+let START_POINTS = 1; // 🔧 change this
+
+// ===== PLAYER =====
+let player = {
+  x: (Math.random() * 2 - 1) * 7000,
+  y: (Math.random() * 2 - 1) * 7000,
+  angle: 0,
+  targetAngle: 0,
+  speed: 2,
+  points: START_POINTS,
+  boosting: false, // ✅ ADD THIS
+  segments: [],
+};
+
+// ===== BOT NAMES AND SKINS =====
+const BOT_NAMES = [
+  "Jeanne Calment", "Kane Tanaka", "Sarah Knauss", "Lucile Randon", "Nabi Tajima",
+  "Violet Brown", "Emma Morano", "Maria Capovilla", "Misao Okawa", "Gertrude Weaver",
+  "Maria Branyas Morera", "Fusa Tatsumi", "Inah Canabarro Lucas", "Ethel Caterham",
+  "Marie-Rose Tessier", "Antonia da Santa Cruz", "Maggie Barnes", "Tane Ikai",
+  "Ana Vela Rubio", "Chiyo Miyako", "Airbus A380", "Boeing 747", "Wailord",
+  "Guzzlord", "Boeing 777", "Airbus A321", "Skyscraper", "Bus", "Train", "Titanic"
+];
+
+const BOT_SKINS = [
+  ["#0055ff", "#ffffff", "#ff2222"], // Jeanne Calment
+  ["#ffffff", "#ff0000"],            // Kane Tanaka
+  ["#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#0055ff", "#0055ff", "#0055ff", "#0055ff", "#0055ff", "#0055ff", "#0055ff"], // Sarah Knauss
+  ["#0055ff", "#ffffff", "#ff2222"], // Lucile Randon
+  ["#ffffff", "#ff0000"],            // Nabi Tajima
+  ["#008000", "#FFFF00", "#000000"], // Violet Brown
+  ["#008000", "#ffffff", "#ff2222"], // Emma Morano
+  ["#FFFF00", "#FFFF00", "#0055ff", "#ff2222"], // Maria Capovilla
+  ["#ffffff", "#ff0000"],            // Misao Okawa
+  ["#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#0055ff", "#0055ff", "#0055ff", "#0055ff", "#0055ff", "#0055ff", "#0055ff"], // Gertrude Weaver
+  ["#ff2222", "#FFFF00", "#FFFF00", "#ff2222"], // Maria Branyas Morera
+  ["#ffffff", "#ff0000"],            // Fusa Tatsumi
+  ["#008000", "#FFFF00", "#0055ff", "#FFFF00"], // Inah Canabarro Lucas
+  ["#8000ff"],                       // Ethel Caterham
+  ["#0055ff", "#ffffff", "#ff2222"], // Marie-Rose Tessier
+  ["#008000", "#FFFF00", "#0055ff", "#FFFF00"], // Antonia da Santa Cruz
+  ["#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#ffffff", "#ff2222", "#0055ff", "#0055ff", "#0055ff", "#0055ff", "#0055ff", "#0055ff", "#0055ff"], // Maggie Barnes
+  ["#ffffff", "#ff0000"],            // Tane Ikai
+  ["#ff2222", "#FFFF00", "#FFFF00", "#ff2222"], // Ana Vela Rubio
+  ["#ffffff", "#ff0000"],            // Chiyo Miyako
+  ["#888888"], // Airbus A380
+  ["#888888"], // Boeing 747
+  ["#87CEEB"], // Wailord
+  ["#000000"], // Guzzlord
+  ["#888888"], // Boeing 777
+  ["#888888"], // Airbus A321
+  ["#888888"], // Skyscraper
+  ["#FFFF00"], // Bus
+  ["#888888"], // Train
+  ["#000000"]  // Titanic
+];
+
+// ===== BOTS =====
+let bots = [];
+
+for (let i = 0; i < 210; i++) {
+  bots.push({
+    x: (Math.random() * 2 - 1) * 7000,
+    y: (Math.random() * 2 - 1) * 7000,
+    angle: Math.random() * Math.PI * 2,
+    targetAngle: 0,
+    speed: 2,
+    points: START_POINTS,
+    boosting: false,
+    segments: [],
+    name: BOT_NAMES[i],
+    skin: BOT_SKINS[i]
+  });
+}
+
+// ===== FOOD =====
+let food = [];
+
+for (let i = 0; i < 20000; i++) {
+    food.push({
+        x: (Math.random() * 2 - 1) * 7000,
+        y: (Math.random() * 2 - 1) * 7000
+    });
+}
+
+function getHitRadius(points) {
+    let sizeFactor = getSizeFactor(points);
+    return 1 + sizeFactor * 1;   // same size formula as your worm radius
+}
+
+// ===== UPDATE BOTS =====
+function updateBots()
+{
+  bots.forEach(bot => {
+    // simple random movement
+    if (Math.random() < 0.1) {
+      bot.targetAngle = Math.random() * Math.PI * 2;
+}
+
+    // smooth turning
+let diff = bot.targetAngle - bot.angle;
+bot.angle += diff * 0.315;
+
+    // movement
+    let speed = bot.boosting ? 20 : 10;
+
+    bot.x += Math.cos(bot.angle) * speed;
+    bot.y += Math.sin(bot.angle) * speed;
+
+    if (!bot.boosting) {
+    bot.points += 0 / 60;
+} else {
+    bot.points -= bot.points * 0.0001 / 60;
+}
+
+    // ===== BOT BOOSTING =====
+if (bot.boostTimer > 0) {
+    bot.boosting = true;
+    bot.boostTimer--;
+} else {
+    bot.boosting = false;
+
+    // 25% chance per second to start boosting
+    if (Math.random() < 0.25 / 60) {
+        bot.boostTimer = 600;
+    }
+}
+
+   // ===== BOT BOOST CHANCE =====
+// 25% chance per second = about 0.25 / 60 per frame if running ~60 updates/sec
+bot.boosting = Math.random() < (0.25 / 60);
+
+    // ===== BOT EAT FOOD =====
+for (let i = 0; i < food.length; i++) {
+
+    let dx = bot.x - food[i].x;
+    let dy = bot.y - food[i].y;
+
+    let distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance < 100) {
+
+        // gain random points
+        bot.points += Math.floor(Math.random() * 10) + 1;
+
+        // respawn food
+        food[i].x = (Math.random() * 2 - 1) * 7000;
+        food[i].y = (Math.random() * 2 - 1) * 7000;
+    }
+}
+
+    // ===== COLLISIONS WITH PLAYER =====
+for (let i = 1; i < player.segments.length; i++) {
+    let dx = bot.x - player.segments[i].x;
+    let dy = bot.y - player.segments[i].y;
+
+    let botHit = getHitRadius(bot.points) * 1.2;   // bot head
+    let playerBodyHit = getHitRadius(player.points); // player body
+    let hitDist = botHit + playerBodyHit;
+
+    if (dx * dx + dy * dy < hitDist * hitDist) {
+        player.points += bot.points * (Math.random() * 10);
+        respawnWorm(bot);
+        break;
+    }
+}
+
+// ===== COLLISIONS WITH OTHER BOTS =====
+bots.forEach(botB => {
+    if (bot === botB) return;
+
+    // ---- head-on ----
+    let dx = bot.x - botB.x;
+    let dy = bot.y - botB.y;
+
+    let botHit = getHitRadius(bot.points) * 1.2;
+    let botBHit = getHitRadius(botB.points) * 1.2;
+    let headHitDist = botHit + botBHit;
+
+    if (dx * dx + dy * dy < headHitDist * headHitDist) {
+        respawnWorm(bot);
+        respawnWorm(botB);
+        return;
+    }
+
+    // ---- bot head into botB body ----
+    for (let i = 1; i < botB.segments.length; i++) {
+        let dx2 = bot.x - botB.segments[i].x;
+        let dy2 = bot.y - botB.segments[i].y;
+
+        let botHeadHit = getHitRadius(bot.points) * 1.2;
+        let botBBodyHit = getHitRadius(botB.points);
+        let bodyHitDist = botHeadHit + botBBodyHit;
+
+        if (dx2 * dx2 + dy2 * dy2 < bodyHitDist * bodyHitDist) {
+            botB.points += bot.points * (Math.random() * 10);
+            respawnWorm(bot);
+            return;
+        }
+    }
+});
+
+    // respawn bot
+    // respawn
+  function respawnWorm(worm) {
+    worm.x = (Math.random() * 2 - 1) * 7000;
+    worm.y = (Math.random() * 2 - 1) * 7000;
+    worm.angle = Math.random() * Math.PI * 2;
+    worm.targetAngle = worm.angle;
+    worm.points = START_POINTS;
+
+    for (let i = 0; i < worm.segments.length; i++) {
+        worm.segments[i].x = worm.x;
+        worm.segments[i].y = worm.y;
+    }
+}
+
+    // stay inside map
+    let dist = Math.sqrt(bot.x*bot.x + bot.y*bot.y);
+    if (dist > MAP_RADIUS) {
+      let a = Math.atan2(bot.y, bot.x);
+      bot.x = Math.cos(a) * MAP_RADIUS;
+      bot.y = Math.sin(a) * MAP_RADIUS;
+    }
+
+    // update segments (similar to player)
+    let sizeFactor = getSizeFactor(bot.points);
+    let spacing = 1 + sizeFactor * 1;
+
+    bot.segments[0] = {x: bot.x, y: bot.y};
+
+    for (let i = 1; i < bot.segments.length; i++) {
+      let prev = bot.segments[i-1];
+      let cur = bot.segments[i];
+
+      let dx = prev.x - cur.x;
+      let dy = prev.y - cur.y;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+
+      if (dist > spacing) {
+        let angle = Math.atan2(dy, dx);
+        cur.x = prev.x - Math.cos(angle) * spacing;
+        cur.y = prev.y - Math.sin(angle) * spacing;
+      }
+    }
+  });
+}
+
+// bot segments initialization
+bots.forEach(bot => {
+  for (let i = 0; i < MAX_SEGMENTS; i++) {
+    bot.segments.push({x: bot.x, y: bot.y});
+  }
+});
+
+// bot follow system
+setInterval(updateBots, 60 / 60);
+
+window.addEventListener("mousedown", () => player.boosting = true);
+window.addEventListener("mouseup", () => player.boosting = false);
+
+// initialize fixed segments
+for (let i = 0; i < MAX_SEGMENTS; i++) {
+  player.segments.push({x: player.x, y: player.y});
+}
+
+// ===== INPUT =====
+window.addEventListener("mousemove", e => {
+  let dx = e.clientX - canvas.width/2;
+  let dy = e.clientY - canvas.height/2;
+  player.targetAngle = Math.atan2(dy, dx);
+});
+
+// ===== SIZE =====
+function getSizeFactor(points) {
+    return Math.pow(points, 0.315);
+  }
+
+// ===== GAME LOOP =====
+function update() {
+  // smooth turning
+  let diff = player.targetAngle - player.angle;
+  player.angle += diff * 0.315;
+
+  // movement
+  let speed = player.boosting ? 4 : 2;
+
+  player.x += Math.cos(player.angle) * speed;
+  player.y += Math.sin(player.angle) * speed;
+
+  if (!player.boosting) {
+    player.points += 0 / 60;
+} else {
+    player.points -= player.points * 0.0001 / 60;
+}
+
+  // ===== FOOD COLLISION =====
+  for (let i = 0; i < food.length; i++) {
+      let dx = player.x - food[i].x;
+      let dy = player.y - food[i].y;
+
+      let distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < 50) {
+          player.points += Math.floor(Math.random() * 10) + 1;
+
+          food[i].x = (Math.random() * 2 - 1) * 7000;
+          food[i].y = (Math.random() * 2 - 1) * 7000;
+      }
+  }
+
+  // ===== PLAYER VS BOTS COLLISIONS =====
+bots.forEach(bot => {
+
+    // -------------------------------
+    // 1) PLAYER HEAD vs BOT HEAD
+    // -------------------------------
+    let dxHead = player.x - bot.x;
+    let dyHead = player.y - bot.y;
+
+    let playerHeadHit = getHitRadius(player.points) * 1.2;
+    let botHeadHit = getHitRadius(bot.points) * 1.2;
+    let headHitDist = playerHeadHit + botHeadHit;
+
+    if (dxHead * dxHead + dyHead * dyHead < headHitDist * headHitDist) {
+        respawnWorm(player);
+        respawnWorm(bot);
+        return;
+    }
+
+    // -------------------------------
+    // 2) PLAYER HEAD vs BOT BODY
+    // -------------------------------
+    for (let i = 1; i < bot.segments.length; i++) {
+        let dxBody = player.x - bot.segments[i].x;
+        let dyBody = player.y - bot.segments[i].y;
+
+        let playerHit = getHitRadius(player.points) * 1.2;
+        let botBodyHit = getHitRadius(bot.points);
+        let bodyHitDist = playerHit + botBodyHit;
+
+        if (dxBody * dxBody + dyBody * dyBody < bodyHitDist * bodyHitDist) {
+            bot.points += player.points * (Math.random() * 10); // or just += player.points if you want
+            respawnWorm(player);
+            return;
+        }
+    }
+
+    // -------------------------------
+    // 3) BOT HEAD vs PLAYER BODY
+    // -------------------------------
+    for (let i = 1; i < player.segments.length; i++) {
+        let dxBot = bot.x - player.segments[i].x;
+        let dyBot = bot.y - player.segments[i].y;
+
+        let botHit = getHitRadius(bot.points) * 1.2;
+        let playerBodyHit = getHitRadius(player.points);
+        let botBodyDist = botHit + playerBodyHit;
+
+        if (dxBot * dxBot + dyBot * dyBot < botBodyDist * botBodyDist) {
+            player.points += bot.points * 5; // or just += bot.points if you want
+            respawnWorm(bot);
+            return;
+        }
+    }
+});
+
+  // respawn
+  function respawnWorm(worm) {
+    worm.x = (Math.random() * 2 - 1) * 7000;
+    worm.y = (Math.random() * 2 - 1) * 7000;
+    worm.angle = Math.random() * Math.PI * 2;
+    worm.targetAngle = worm.angle;
+    worm.points = START_POINTS;
+
+    for (let i = 0; i < worm.segments.length; i++) {
+        worm.segments[i].x = worm.x;
+        worm.segments[i].y = worm.y;
+    }
+}
+
+  // stay inside map
+  let dist = Math.sqrt(player.x*player.x + player.y*player.y);
+  if (dist > MAP_RADIUS) {
+    let a = Math.atan2(player.y, player.x);
+    player.x = Math.cos(a) * MAP_RADIUS;
+    player.y = Math.sin(a) * MAP_RADIUS;
+  }
+
+  let sizeFactor = getSizeFactor(player.points);
+
+  let spacing = 1 + sizeFactor * 1;
+
+  // head
+  player.segments[0].x = player.x;
+  player.segments[0].y = player.y;
+
+  // follow system (distance-based, VERY important)
+  for (let i = 1; i < player.segments.length; i++) {
+    let prev = player.segments[i-1];
+    let cur = player.segments[i];
+
+    let dx = prev.x - cur.x;
+    let dy = prev.y - cur.y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+
+    if (dist > spacing) {
+      let angle = Math.atan2(dy, dx);
+      cur.x = prev.x - Math.cos(angle) * spacing;
+      cur.y = prev.y - Math.sin(angle) * spacing;
+    }
+  }
+}
+
+// ===== DRAW =====
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  let sizeFactor = getSizeFactor(player.points);
+
+  // ===== CAMERA ZOOM (matches growth) =====
+  let zoom = 1 / (0.2 + sizeFactor * 0.02);
+
+  ctx.save();
+  ctx.translate(canvas.width/2, canvas.height/2);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-player.x, -player.y);
+
+  // ===== HEX GRID (simple) =====
+  ctx.strokeStyle = "#222";
+  for (let x = -10000; x < 10000; x += 40) {
+    for (let y = -10000; y < 10000; y += 40) {
+      ctx.strokeRect(x, y, 30, 30);
+    }
+  }
+
+  // ===== DRAW FOOD =====
+  ctx.fillStyle = "#ffcc00";
+
+food.forEach(f => {
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+});
+
+// ===== DRAW BOTS =====
+bots.forEach((bot, index) => {
+  let botSizeFactor = getSizeFactor(bot.points);
+  let botRadius = 1 + botSizeFactor * 1;
+
+  let skin = BOT_SKINS[index % BOT_SKINS.length];
+
+  // draw segments
+  for (let i = bot.segments.length - 1; i >= 0; i--) {
+    let s = bot.segments[i];
+    let r = (i === 0) ? botRadius * 1.2 : botRadius;
+
+    let color = skin[i % skin.length];
+    ctx.fillStyle = color;
+
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ===== BOT FACE =====
+  let head = bot.segments[0];
+
+  ctx.save();
+  ctx.translate(head.x, head.y);
+  ctx.rotate(bot.angle);
+
+  // eyes
+  ctx.fillStyle = "white";
+  ctx.beginPath();
+  ctx.arc(botRadius * 0.4, -botRadius * 0.4, botRadius * 0.5, 0, Math.PI * 2);
+  ctx.arc(botRadius * 0.4,  botRadius * 0.4, botRadius * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // pupils
+  ctx.fillStyle = "black";
+  ctx.beginPath();
+  ctx.arc(botRadius * 0.2, -botRadius * 0.2, botRadius * 0.25, 0, Math.PI * 2);
+  ctx.arc(botRadius * 0.2,  botRadius * 0.2, botRadius * 0.25, 0, Math.PI * 2);
+  ctx.fill();
+
+  // mouth
+  ctx.fillStyle = "red";
+  ctx.beginPath();
+  ctx.moveTo(botRadius * 1.3, 0);
+  ctx.lineTo(botRadius * 0.7, -botRadius * 0.3);
+  ctx.lineTo(botRadius * 0.7,  botRadius * 0.3);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+});
+
+  // ===== DRAW BOT NAMES =====
+  ctx.fillStyle = "orange";
+  ctx.font = "16px Arial";
+  bots.forEach((bot, index) => {
+    let head = bot.segments[0];
+    ctx.save();
+    ctx.translate(head.x, head.y);
+    ctx.rotate(bot.angle);
+    ctx.fillText(BOT_NAMES[index % BOT_NAMES.length], 20, -20);
+    ctx.restore();
+  });
+
+  // ===== DRAW BOT SCORE (NEXT TO NAME) =====
+  ctx.fillStyle = "orange";
+  ctx.font = "16px Arial";
+  bots.forEach((bot, index) => {
+    let head = bot.segments[0];
+    ctx.save();
+    ctx.translate(head.x, head.y);
+    ctx.rotate(bot.angle);
+    ctx.fillStyle = "orange";
+    ctx.fillText("Points: " + Math.floor(bot.points), 20, 30);
+    ctx.restore();
+  });
+
+  // ===== MAP BORDER =====
+  ctx.beginPath();
+  ctx.arc(0, 0, MAP_RADIUS, 0, Math.PI * 2);
+  ctx.strokeStyle = "red";
+  ctx.lineWidth = 8;
+  ctx.stroke();
+
+  // ===== WORM SIZE =====
+let radius = 1 + sizeFactor * 1;
+
+// draw player segments
+for (let i = player.segments.length - 1; i >= 0; i--) {
+  let s = player.segments[i];
+  let r = (i === 0) ? radius * 1.2 : radius;
+
+  // skin: fraud
+  let color = ["red", "orange", "yellow", "green", "blue", "purple"][i % 6];
+  ctx.fillStyle = color;
+
+  ctx.beginPath();
+  ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// ===== FACE =====
+let head = player.segments[0];
+
+ctx.save();
+ctx.translate(head.x, head.y);
+ctx.rotate(player.angle);
+
+// eyes
+ctx.fillStyle = "white";
+ctx.beginPath();
+ctx.arc(radius * 0.4, -radius * 0.4, radius * 0.5, 0, Math.PI * 2);
+ctx.arc(radius * 0.4, radius * 0.4, radius * 0.5, 0, Math.PI * 2);
+ctx.fill();
+
+// pupils
+ctx.fillStyle = "black";
+ctx.beginPath();
+ctx.arc(radius * 0.2, -radius * 0.2, radius * 0.25, 0, Math.PI * 2);
+ctx.arc(radius * 0.2, radius * 0.2, radius * 0.25, 0, Math.PI * 2);
+ctx.fill();
+
+// mouth
+ctx.fillStyle = "red";
+ctx.beginPath();
+ctx.moveTo(radius * 1.3, 0);
+ctx.lineTo(radius * 0.7, -radius * 0.3);
+ctx.lineTo(radius * 0.7, radius * 0.3);
+ctx.closePath();
+ctx.fill();
+
+ctx.restore();
+
+ctx.restore();
+
+  // ===== LEADERBOARD =====
+let leaderboard = [player, ...bots];
+leaderboard.sort((a, b) => b.points - a.points);
+
+ctx.fillStyle = "white";
+ctx.font = "15px Arial";
+ctx.textAlign = "right";
+
+ctx.fillText("Top Worms", canvas.width - 20, 20);
+
+for (let i = 0; i < Math.min(10, leaderboard.length); i++) {
+    let p = leaderboard[i];
+    let displayName;
+
+    if (p === player) {
+        displayName = "Player";
+    } else {
+        let botIndex = bots.indexOf(p);
+        displayName = BOT_NAMES[botIndex % BOT_NAMES.length];
+    }
+
+    ctx.fillText(
+        `${i + 1}. ${displayName} - ${Math.floor(p.points)}`,
+        canvas.width - 15,
+        50 + i * 15
+    );
+}
+
+  // ===== MINIMAP =====
+let miniSize = 150;
+let miniX = canvas.width - miniSize - 20;
+let miniY = canvas.height - miniSize - 20;
+
+// background
+ctx.fillStyle = "#000";
+ctx.fillRect(miniX, miniY, miniSize, miniSize);
+
+ctx.strokeStyle = "white";
+ctx.strokeRect(miniX, miniY, miniSize, miniSize);
+
+// map circle
+ctx.beginPath();
+ctx.arc(miniX + miniSize/2, miniY + miniSize/2, miniSize/2, 0, Math.PI*2);
+ctx.strokeStyle = "gray";
+ctx.stroke();
+
+// ===== PLAYER FULL MINIMAP TRAIL =====
+ctx.strokeStyle = "white";
+ctx.lineWidth = 1.5;
+ctx.lineCap = "round";
+ctx.lineJoin = "round";
+
+ctx.beginPath();
+
+let centerX = miniX + miniSize/2;
+let centerY = miniY + miniSize/2;
+
+for (let i = 0; i < player.segments.length; i++) {
+  let s = player.segments[i];
+
+  let px = (s.x / MAP_RADIUS) * (miniSize/2);
+  let py = (s.y / MAP_RADIUS) * (miniSize/2);
+
+  let drawX = centerX + px;
+  let drawY = centerY + py;
+
+  if (i === 0) {
+    ctx.moveTo(drawX, drawY);
+  } else {
+    ctx.lineTo(drawX, drawY);
+  }
+}
+
+ctx.stroke();
+
+// ===== PLAYER HEAD DOT =====
+let px = (player.x / MAP_RADIUS) * (miniSize/2);
+let py = (player.y / MAP_RADIUS) * (miniSize/2);
+
+ctx.beginPath();
+ctx.arc(centerX + px, centerY + py, 4, 0, Math.PI * 2);
+ctx.fillStyle = "white";
+ctx.fill();
+
+// ===== BOT TRAILS ON MINIMAP =====
+ctx.strokeStyle = "white";
+bots.forEach(bot => {
+  ctx.beginPath();
+
+  bot.segments.forEach((s, index) => {
+    let px = (s.x / MAP_RADIUS) * (miniSize/2);
+    let py = (s.y / MAP_RADIUS) * (miniSize/2);
+
+    let drawX = centerX + px;
+    let drawY = centerY + py;
+
+    if (index === 0) {
+      ctx.moveTo(drawX, drawY);
+    } else {
+      ctx.lineTo(drawX, drawY);
+    }
+  });
+
+  ctx.stroke();
+});
+
+// ===== BOTS ON MINIMAP =====
+bots.forEach(bot => {
+  let px = (bot.x / MAP_RADIUS) * (miniSize/2);
+  let py = (bot.y / MAP_RADIUS) * (miniSize/2);
+});
+
+  // UI
+  ctx.fillStyle = "white";
+  ctx.fillText("Points: " + Math.floor(player.points), 180, 30);
+}
+
+// ===== LOOP =====
+let lastTime = performance.now();
+let accumulator = 0;
+const FIXED_DT = 1000 / 60;
+
+function loop(now) {
+  let dt = now - lastTime;
+  lastTime = now;
+
+  if (dt > 200) dt = 200;
+
+  accumulator += dt;
+
+  while (accumulator >= FIXED_DT) {
+    update();
+    accumulator -= FIXED_DT;
+  }
+
+  draw();
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
