@@ -164,7 +164,7 @@ for (let i = 0; i < food.length; i++) {
     if (distance < 100) {
 
         // gain random points
-        bot.points += Math.floor(Math.random() * 10) + 1;
+        bot.points += Math.floor(Math.random() * 17) + 17;
 
         // respawn food
         food[i].x = (Math.random() * 2 - 1) * 7000;
@@ -182,7 +182,7 @@ for (let i = 1; i < player.segments.length; i++) {
     let hitDist = botHit + playerBodyHit;
 
     if (dx * dx + dy * dy < hitDist * hitDist) {
-        player.points += bot.points * (Math.random() * 10);
+        player.points += bot.points * 17;
         respawnWorm(bot);
         break;
     }
@@ -216,7 +216,7 @@ bots.forEach(botB => {
         let bodyHitDist = botHeadHit + botBBodyHit;
 
         if (dx2 * dx2 + dy2 * dy2 < bodyHitDist * bodyHitDist) {
-            botB.points += bot.points * (Math.random() * 10);
+            botB.points += bot.points * 17;
             respawnWorm(bot);
             return;
         }
@@ -325,7 +325,7 @@ function update() {
       let distance = Math.sqrt(dx * dx + dy * dy);
 
       if (distance < 50) {
-          player.points += Math.floor(Math.random() * 10) + 1;
+          player.points += Math.floor(Math.random() * 17) + 17;
 
           food[i].x = (Math.random() * 2 - 1) * 7000;
           food[i].y = (Math.random() * 2 - 1) * 7000;
@@ -363,7 +363,7 @@ bots.forEach(bot => {
         let bodyHitDist = playerHit + botBodyHit;
 
         if (dxBody * dxBody + dyBody * dyBody < bodyHitDist * bodyHitDist) {
-            bot.points += player.points * (Math.random() * 10); // or just += player.points if you want
+            bot.points += player.points * 17; // or just += player.points if you want
             respawnWorm(player);
             return;
         }
