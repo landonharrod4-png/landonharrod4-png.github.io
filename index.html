@@ -81,7 +81,7 @@ const BOT_SKINS = [
 // ===== BOTS =====
 let bots = [];
 
-for (let i = 0; i < 180; i++) {
+for (let i = 0; i < 30; i++) {
   bots.push({
     x: (Math.random() * 2 - 1) * 7000,
     y: (Math.random() * 2 - 1) * 7000,
@@ -125,7 +125,7 @@ let diff = bot.targetAngle - bot.angle;
 bot.angle += diff * 0.315;
 
     // movement
-    let speed = bot.boosting ? 16 : 8;
+    let speed = bot.boosting ? 8 : 4;
 
     bot.x += Math.cos(bot.angle) * speed;
     bot.y += Math.sin(bot.angle) * speed;
