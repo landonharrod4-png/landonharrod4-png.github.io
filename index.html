@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Wormate Private Server For Farming (With Jeanne Calment)</title>
+<title>Wormate Private Server</title>
 <style>
   body { margin: 0; overflow: hidden; background: #111; }
   canvas { display: block; }
@@ -81,7 +81,7 @@ const BOT_SKINS = [
 // ===== BOTS =====
 let bots = [];
 
-for (let i = 0; i < 1; i++) {
+for (let i = 0; i < 120; i++) {
   bots.push({
     x: (Math.random() * 2 - 1) * 7000,
     y: (Math.random() * 2 - 1) * 7000,
@@ -125,7 +125,7 @@ let diff = bot.targetAngle - bot.angle;
 bot.angle += diff * 0.315;
 
     // movement
-    let speed = bot.boosting ? 4 : 2;
+    let speed = bot.boosting ? 8 : 4;
 
     bot.x += Math.cos(bot.angle) * speed;
     bot.y += Math.sin(bot.angle) * speed;
@@ -164,7 +164,7 @@ for (let i = 0; i < food.length; i++) {
     if (distance < 100) {
 
         // gain random points
-        bot.points += Math.floor(Math.random() * 8) + 2;
+        bot.points += Math.floor(Math.random() * 9) + 1;
 
         // respawn food
         food[i].x = (Math.random() * 2 - 1) * 7000;
@@ -177,12 +177,12 @@ for (let i = 1; i < player.segments.length; i++) {
     let dx = bot.x - player.segments[i].x;
     let dy = bot.y - player.segments[i].y;
 
-    let botHit = getHitRadius(bot.points) * 1.2;   // bot head
+    let botHit = getHitRadius(bot.points) * 1;   // bot head
     let playerBodyHit = getHitRadius(player.points); // player body
     let hitDist = botHit + playerBodyHit;
 
     if (dx * dx + dy * dy < hitDist * hitDist) {
-        player.points += bot.points * (Math.random() * 10) + 2;
+        player.points += bot.points * (Math.random() * 10);
         respawnWorm(bot);
         break;
     }
@@ -196,8 +196,8 @@ bots.forEach(botB => {
     let dx = bot.x - botB.x;
     let dy = bot.y - botB.y;
 
-    let botHit = getHitRadius(bot.points) * 1.2;
-    let botBHit = getHitRadius(botB.points) * 1.2;
+    let botHit = getHitRadius(bot.points) * 1;
+    let botBHit = getHitRadius(botB.points) * 1;
     let headHitDist = botHit + botBHit;
 
     if (dx * dx + dy * dy < headHitDist * headHitDist) {
@@ -211,12 +211,12 @@ bots.forEach(botB => {
         let dx2 = bot.x - botB.segments[i].x;
         let dy2 = bot.y - botB.segments[i].y;
 
-        let botHeadHit = getHitRadius(bot.points) * 1.2;
+        let botHeadHit = getHitRadius(bot.points) * 1;
         let botBBodyHit = getHitRadius(botB.points);
         let bodyHitDist = botHeadHit + botBBodyHit;
 
         if (dx2 * dx2 + dy2 * dy2 < bodyHitDist * bodyHitDist) {
-            botB.points += bot.points * (Math.random() * 10) + 2;
+            botB.points += bot.points * (Math.random() * 10);
             respawnWorm(bot);
             return;
         }
@@ -325,7 +325,7 @@ function update() {
       let distance = Math.sqrt(dx * dx + dy * dy);
 
       if (distance < 50) {
-          player.points += Math.floor(Math.random() * 8) + 2;
+          player.points += Math.floor(Math.random() * 9) + 1;
 
           food[i].x = (Math.random() * 2 - 1) * 7000;
           food[i].y = (Math.random() * 2 - 1) * 7000;
@@ -341,8 +341,8 @@ bots.forEach(bot => {
     let dxHead = player.x - bot.x;
     let dyHead = player.y - bot.y;
 
-    let playerHeadHit = getHitRadius(player.points) * 1.2;
-    let botHeadHit = getHitRadius(bot.points) * 1.2;
+    let playerHeadHit = getHitRadius(player.points) * 1;
+    let botHeadHit = getHitRadius(bot.points) * 1;
     let headHitDist = playerHeadHit + botHeadHit;
 
     if (dxHead * dxHead + dyHead * dyHead < headHitDist * headHitDist) {
@@ -358,12 +358,12 @@ bots.forEach(bot => {
         let dxBody = player.x - bot.segments[i].x;
         let dyBody = player.y - bot.segments[i].y;
 
-        let playerHit = getHitRadius(player.points) * 1.2;
+        let playerHit = getHitRadius(player.points) * 1;
         let botBodyHit = getHitRadius(bot.points);
         let bodyHitDist = playerHit + botBodyHit;
 
         if (dxBody * dxBody + dyBody * dyBody < bodyHitDist * bodyHitDist) {
-            bot.points += player.points * (Math.random() * 10) + 2; // or just += player.points if you want
+            bot.points += player.points * (Math.random() * 10); // or just += player.points if you want
             respawnWorm(player);
             return;
         }
@@ -376,12 +376,12 @@ bots.forEach(bot => {
         let dxBot = bot.x - player.segments[i].x;
         let dyBot = bot.y - player.segments[i].y;
 
-        let botHit = getHitRadius(bot.points) * 1.2;
+        let botHit = getHitRadius(bot.points) * 1;
         let playerBodyHit = getHitRadius(player.points);
         let botBodyDist = botHit + playerBodyHit;
 
         if (dxBot * dxBot + dyBot * dyBot < botBodyDist * botBodyDist) {
-            player.points += bot.points * 5; // or just += bot.points if you want
+            player.points += bot.points * (Math.random() * 10); // or just += bot.points if you want
             respawnWorm(bot);
             return;
         }
@@ -476,7 +476,7 @@ bots.forEach((bot, index) => {
   // draw segments
   for (let i = bot.segments.length - 1; i >= 0; i--) {
     let s = bot.segments[i];
-    let r = (i === 0) ? botRadius * 1.2 : botRadius;
+    let r = (i === 0) ? botRadius * 1 : botRadius;
 
     let color = skin[i % skin.length];
     ctx.fillStyle = color;
@@ -557,9 +557,9 @@ let radius = 1 + sizeFactor * 1;
 // draw player segments
 for (let i = player.segments.length - 1; i >= 0; i--) {
   let s = player.segments[i];
-  let r = (i === 0) ? radius * 1.2 : radius;
+  let r = (i === 0) ? radius * 1 : radius;
 
-  // skin: fraud
+  // skin: rainbow
   let color = ["red", "orange", "yellow", "green", "blue", "purple"][i % 6];
   ctx.fillStyle = color;
 
